@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    #we're using a spl postgres img that has pgvector extension preinstalled
+
+    container_name: incident_postgres
+
+    environment:
+      POSTGRES_USER: incident_user
+      POSTGRES_PASSWORD: incident_pass
+      POSTGRES_DB: incident_db
+
+    ports:
+      - "5432:5432"
+      # container runs postgres on port 5432 internally
+      # we're mapping it to port 5432 on our laptop so we can conect to it
+      
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # this maps a named volume to where postgres stores its files
+
+  redis:
+    image: redis:7-alpine
+
+    container_name: incident_redis
+    ports:
+      - "6379:6379"
+
+    command: redis-server --appendonly yes
+    # this enables persistence. it writes every operation to a log file so that data survives restarts
+    # slightly slower writes but durable data
+
+  # named volumes- docker manages these on your machine
+  volumes:
+    postgres_data:
