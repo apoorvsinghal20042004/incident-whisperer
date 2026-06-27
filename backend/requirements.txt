@@ -1,0 +1,21 @@
+#web frameword
+fastapi==0.111.0
+
+# ASGI server - runs FastAPI
+uvicorn[standard]==0.29.0
+
+# Data validation
+pydantic==2.7.1
+pydantic-settings==2.2.1
+
+# Database
+sqlalchemy==2.0.30
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+
+# Environment variable loading
+python-dotenv==1.0.1
+
+# Redis
+redis==5.0.4
+celery==5.4.0
