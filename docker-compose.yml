@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -33,5 +31,5 @@ services:
     # slightly slower writes but durable data
 
   # named volumes- docker manages these on your machine
-  volumes:
+volumes:
     postgres_data:
