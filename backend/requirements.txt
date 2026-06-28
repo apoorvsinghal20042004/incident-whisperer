@@ -19,3 +19,5 @@ python-dotenv==1.0.1
 # Redis
 redis==5.0.4
 celery==5.4.0
+
+greenlet==3.5.3
