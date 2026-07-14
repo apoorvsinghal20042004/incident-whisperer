@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import get_settings
+from sqlalchemy import text
 
 from app.db.database import engine, Base
 
@@ -10,6 +11,7 @@ from app.db.database import engine, Base
 # create their tables. Importing the module registers the model with Base.
 # If we skip this import, Base.metadata.create_all creates zero tables.
 from app.models import incident
+from app.models import log_embedding
 from app.api import incidents
 settings = get_settings()
 
@@ -21,7 +23,13 @@ async def lifespan(app: FastAPI):
     # engine.begin() opens a single connection for setup work.
     # We use it here just to run the CREATE TABLE statements.
     # async with ensures the connection is closed after setup.
+
     async with engine.begin() as conn:
+
+        # Enable pgvector extension first- must happen before creating
+        # any table that uses VECTOR column type
+        # IF NOT EXISTS makes this safe to run every startup
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         # Base.metadata.create_all looks at every model registered
         # with Base and creates its table in Postgres if it doesn't
         # exist yet. Safe to run every startup — won't overwrite
