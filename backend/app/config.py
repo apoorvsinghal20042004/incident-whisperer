@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
 
     anthropic_api_key: str = ""
-
+    openai_api_key: str = ""
     app_name: str = "Incident Whisperer"
     debug: bool = False
 
