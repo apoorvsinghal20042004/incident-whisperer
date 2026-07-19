@@ -42,8 +42,13 @@ async def triage_agent(state: IncidentState) -> dict:
     ])
 
     # parse JSON response
+    content = response.content.strip()
+    if content.startswith("```"):
+        content = content.split("\n", 1)[1]
+        content = content.rsplit("```", 1)[0]
+        content = content.strip()
     try:
-        triage_findings = json.loads(response.content)
+        triage_findings = json.loads(content)  # triage.py
     except json.JSONDecodeError:
         # fallback if llm didn't return valid json
         triage_findings = {

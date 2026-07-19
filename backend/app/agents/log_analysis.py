@@ -89,9 +89,13 @@ async def log_analysis_agent(state: IncidentState) -> dict:
         HumanMessage(content=user_prompt),
     ])
 
+    content = response.content.strip()
+    if content.startswith("```"):
+        content = content.split("\n", 1)[1]
+        content = content.rsplit("```", 1)[0]
+        content = content.strip()
     try:
-        log_findings = json.loads(response.content)
-        log_findings['relevant_logs'] = unique_logs
+        log_findings = json.loads(content)     # log_analysis.py
     except json.JSONDecodeError:
         log_findings = {
             "key_patterns": ["Couldn't parse llm response"],
