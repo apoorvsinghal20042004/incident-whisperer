@@ -27,6 +27,7 @@ class Incident(Base):
 
     # full structured agent report 
     agent_report = Column(JSON, nullable=True)
+    remediation_steps = Column(JSON, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),

@@ -38,6 +38,7 @@ class IncidentResponse(BaseModel):
     agent_report: Optional[Any]
     created_at: datetime
     updated_at: datetime
+    remediation_steps: Optional[list[str]] = None
 
     # this inner class tells pydantic
     # "this schema will be used with SQLAlchemy model objects, not just plain python dictionaries"
@@ -54,3 +55,4 @@ class IncidentUpdate(BaseModel):
     root_cause: Optional[str] = None
     confidence_score: Optional[float] = None
     agent_report: Optional[Any] = None
+    remediation_steps: Optional[list[str]] = None
