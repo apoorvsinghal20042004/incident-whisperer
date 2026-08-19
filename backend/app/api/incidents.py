@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from app.workers.tasks import process_incident_task
 import uuid
 
 from app.db.database import get_db
@@ -34,6 +35,16 @@ async def create_incident(
 
     await db.flush()
     await db.refresh(new_incident)
+
+    # queue the bg task- runs in a sep celery worker proc
+    # .delay() is celery's shorthand for "send this task to queue now"
+    # we pass incident_id as a str bcoz celery serializes
+    # args as json. uuid obj aren't json serializable, strings are
+    process_incident_task.delay(
+        incident_id=str(new_incident.id),
+        logs=[],
+        metrics={},
+    )
 
     return new_incident
 
