@@ -1,22 +1,47 @@
-# Incident Whisperer
+## Tech stack
 
-Autonomous on-call agent system that diagnoses production failures in real time — 
-before your engineer opens a terminal.
+- **Agent orchestration** — LangGraph (multi-agent StateGraph)
+- **LLM** — GPT-4o (hypothesis), GPT-4o-mini (triage, analysis)
+- **Semantic search** — pgvector + OpenAI text-embedding-3-small
+- **Backend** — FastAPI (async), SQLAlchemy, PostgreSQL
+- **Task queue** — Celery + Redis
+- **Real-time streaming** — Redis pub/sub + Server-Sent Events
+- **Frontend** — Next.js 14 (in progress)
+- **Infrastructure** — Docker, Kubernetes-ready
 
-## What it does
+## Run locally
 
-When a production incident fires, Incident Whisperer runs a LangGraph multi-agent 
-pipeline that simultaneously analyzes logs, traces, and metrics to produce a 
-structured root cause hypothesis with confidence scores and ranked remediation steps.
+```bash
+# Start infrastructure
+docker compose up -d
 
-## Architecture
+# Terminal 1 — API server
+cd backend
+uvicorn app.main:app --reload --port 8000
 
-- **LangGraph** — multi-agent supervisor graph (Triage → Log Analysis + Metrics → Hypothesis)
-- **FastAPI** — async REST API with Server-Sent Events for real-time agent streaming
-- **PostgreSQL + pgvector** — incident storage and semantic log search
-- **Redis + Celery** — async task queue so agent runs never block the API
-- **Next.js** — real-time dashboard showing agent reasoning traces live
+# Terminal 2 — Celery worker
+cd backend
+celery -A app.workers.celery_app worker --loglevel=info
+
+# Trigger an incident
+curl -X POST http://localhost:8000/incidents/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "affected_service": "payment-service",
+    "severity": "P1",
+    "raw_alert": {"alert_name": "HighErrorRate", "current_value": 8.2}
+  }'
+
+# Stream agent events in real time
+curl -N http://localhost:8000/stream/incidents/{incident_id}
+```
 
 ## Status
 
-🚧 Active development — Phase 1 (backend foundation) complete, Phase 2 (AI core) in progress.
+Backend complete. Frontend in progress.
+
+- ✅ LangGraph multi-agent pipeline
+- ✅ pgvector semantic log search  
+- ✅ Celery async task processing
+- ✅ Redis pub/sub + SSE streaming
+- 🚧 Next.js real-time dashboard
