@@ -2,6 +2,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.agents.state import IncidentState
 from app.config import get_settings
+from app.services.streaming import publish_agent_event
 import json
 
 settings = get_settings()
@@ -26,6 +27,13 @@ async def hypothesis_agent(state: IncidentState) -> dict:
     This is the agent that produces the final output shown to engineers.
     """
     print(f"[Hypothesis Agent] Synthesizing findings for incident {state['incident_id']}...")
+
+    await publish_agent_event(
+        incident_id=state["incident_id"],
+        agent_name="hypothesis",
+        event_type="agent_started",
+        data={"message": "Synthesizing all findings into root cause analysis"},
+    )
 
     triage = state.get('triage_findings') or {}
     log_findings = state.get('log_findings') or {}
@@ -116,6 +124,29 @@ async def hypothesis_agent(state: IncidentState) -> dict:
         "metrics": metrics_findings,
         "hypothesis": hypothesis,
     }
+
+    await publish_agent_event(
+        incident_id=state["incident_id"],
+        agent_name="hypothesis",
+        event_type="agent_complete",
+        data={
+            "root_cause": hypothesis.get("root_cause"),
+            "confidence_score": hypothesis.get("confidence_score"),
+            "message": f"Root cause identified with {hypothesis.get('confidence_score')} confidence",
+        },
+    )
+
+    # Signal that the entire pipeline is done
+    await publish_agent_event(
+        incident_id=state["incident_id"],
+        agent_name="system",
+        event_type="pipeline_complete",
+        data={
+            "root_cause": hypothesis.get("root_cause"),
+            "confidence_score": hypothesis.get("confidence_score"),
+            "remediation_steps": hypothesis.get("remediation_steps"),
+        },
+    )
 
     return {
         "root_cause": hypothesis.get('root_cause'),

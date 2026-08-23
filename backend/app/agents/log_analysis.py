@@ -4,6 +4,7 @@ from app.agents.state import IncidentState
 from app.config import get_settings
 from app.services.embeddings import search_logs
 from app.db.database import AsyncSessionLocal
+from app.services.streaming import publish_agent_event
 import json
 import uuid
 
@@ -25,6 +26,13 @@ async def log_analysis_agent(state: IncidentState) -> dict:
     initial_hypothesis = triage.get('initial_hypothesis', 'service failure')
     investigation_focus = triage.get('investigation_focus', 'check all errors')
     
+    await publish_agent_event(
+        incident_id=state["incident_id"],
+        agent_name="log_analysis",
+        event_type="agent_started",
+        data={"message": "Searching logs for relevant evidence"},
+    )
+
     # run semantic searches with different queries
     search_queries = [
         "database connection pool exhausted timeout",
@@ -108,7 +116,15 @@ async def log_analysis_agent(state: IncidentState) -> dict:
     
     print(f"[Log Analysis Agent] Root service identified: {log_findings.get('root_service')}")
     print(f"[Log Analysis Agent] Confidence: {log_findings.get('confidence')}")
-
+    await publish_agent_event(
+        incident_id=state["incident_id"],
+        agent_name="log_analysis",
+        event_type="agent_complete",
+        data={
+            "findings": {k: v for k, v in log_findings.items() if k != "relevant_logs"},
+            "message": f"Root service identified: {log_findings.get('root_service')}",
+        },
+    )
     return {
         "log_findings": log_findings,
         "messages": [response],

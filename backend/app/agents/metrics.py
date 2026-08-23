@@ -2,6 +2,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.agents.state import IncidentState
 from app.config import get_settings
+from app.services.streaming import publish_agent_event
 import json
 
 settings = get_settings()
@@ -15,7 +16,12 @@ llm = ChatOpenAI(
 async def metrics_agent(state: IncidentState) -> dict:
     print(f"[Metrics Agent] Analyzing metrics for incident {state['incident_id']}...")
     metrics = state.get('metrics', {})
-
+    await publish_agent_event(
+        incident_id=state["incident_id"],
+        agent_name="metrics",
+        event_type="agent_started",
+        data={"message": "Analyzing time-series metrics for anomalies"},
+    )
     if not metrics:
         print("[Metrics Agent] No metrics data available")
         return {
@@ -106,6 +112,16 @@ async def metrics_agent(state: IncidentState) -> dict:
 
     print(f"[Metrics Agent] Anomalies found: {len(metrics_findings.get('anomalies', []))}")
     print(f"[Metrics Agent] Confidence: {metrics_findings.get('confidence')}")
+
+    await publish_agent_event(
+        incident_id=state["incident_id"],
+        agent_name="metrics",
+        event_type="agent_complete",
+        data={
+            "findings": metrics_findings,
+            "message": f"Found {len(metrics_findings.get('anomalies', []))} anomalies",
+        },
+    )
 
     return {
         "metrics_findings": metrics_findings,

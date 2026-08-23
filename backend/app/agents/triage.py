@@ -2,6 +2,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.agents.state import IncidentState
 from app.config import get_settings
+from app.services.streaming import publish_agent_event
 import json
 
 settings = get_settings()
@@ -15,6 +16,15 @@ llm = ChatOpenAI(
 
 async def triage_agent(state: IncidentState) -> dict:
     print(f"[Triage Agent] Analysing alert for {state['affected_service']}...")
+
+    # Publish "started" event
+    await publish_agent_event(
+        incident_id=state["incident_id"],
+        agent_name="triage",
+        event_type="agent_started",
+        data={"message": f"Analysing alert for {state['affected_service']}"},
+    )
+
     system_prompt = """You are a senior Site Reliability Engineer (SRE) performing initial
     triage on a production incident.
     
@@ -60,6 +70,17 @@ async def triage_agent(state: IncidentState) -> dict:
         }
     
     print(f"[Triage Agent] Complete. Hypothesis: {triage_findings.get('initial_hypothesis')}")
+
+    # Publish "complete" event
+    await publish_agent_event(
+        incident_id=state["incident_id"],
+        agent_name="triage",
+        event_type="agent_complete",
+        data={
+            "findings": triage_findings,
+            "message": f"Hypothesis: {triage_findings.get('initial_hypothesis')}",
+        },
+    )
 
     # return only the fields we want to update in state
     return{

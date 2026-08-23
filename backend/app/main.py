@@ -12,7 +12,8 @@ from app.db.database import engine, Base
 # If we skip this import, Base.metadata.create_all creates zero tables.
 from app.models import incident
 from app.models import log_embedding
-from app.api import incidents
+from app.api import incidents, stream
+
 settings = get_settings()
 
 @asynccontextmanager
@@ -64,6 +65,7 @@ app.add_middleware(
 
 # register routers
 app.include_router(incidents.router)
+app.include_router(stream.router)
 # health check endpoint
 # its there for every production API. It returns I am alive
 # used by LBs and monitoring systems to verify the service is running
