@@ -7,13 +7,12 @@ import json
 
 settings = get_settings()
 
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0,
-    api_key=settings.openai_api_key,
-)
-
 async def metrics_agent(state: IncidentState) -> dict:
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0,
+        api_key=settings.openai_api_key,
+    )
     print(f"[Metrics Agent] Analyzing metrics for incident {state['incident_id']}...")
     metrics = state.get('metrics', {})
     await publish_agent_event(

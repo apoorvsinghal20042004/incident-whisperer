@@ -9,14 +9,13 @@ settings = get_settings()
 
 # Using gpt-4o here — this is the most complex reasoning task
 # Worth the extra cost for accuracy on the final diagnosis
-llm = ChatOpenAI(
-    model="gpt-4o",
-    temperature=0,
-    api_key=settings.openai_api_key,
-)
-
 
 async def hypothesis_agent(state: IncidentState) -> dict:
+    llm = ChatOpenAI(
+        model="gpt-4o",
+        temperature=0,
+        api_key=settings.openai_api_key,
+    )
     """
     Final agent — runs after all others complete.
 

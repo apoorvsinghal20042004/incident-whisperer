@@ -10,13 +10,12 @@ import uuid
 
 settings = get_settings()
 
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0,
-    api_key=settings.openai_api_key,
-)
-
 async def log_analysis_agent(state: IncidentState) -> dict:
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0,
+        api_key=settings.openai_api_key,
+    )
     # semantic search over embedded logs to find relevant evidence
     # llm reasoning over those logs to identify patterns and root service
 

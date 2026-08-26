@@ -13,7 +13,6 @@ celery_app = Celery(
 )
 
 celery_app.conf.update(
-    # serialise tasks as JSON
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],
@@ -23,6 +22,7 @@ celery_app.conf.update(
     task_reject_on_worker_lost=True,
     result_expires=3600,
     broker_connection_retry_on_startup=True,
+    worker_pool="solo",  # ← add this
 )
 
 # tell celery where to find tasks

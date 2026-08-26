@@ -7,14 +7,12 @@ import json
 
 settings = get_settings()
 
-# llm initialisation
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0,
-    api_key=settings.openai_api_key,
-)
-
 async def triage_agent(state: IncidentState) -> dict:
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0,
+        api_key=settings.openai_api_key,
+    )
     print(f"[Triage Agent] Analysing alert for {state['affected_service']}...")
 
     # Publish "started" event

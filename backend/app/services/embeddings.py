@@ -9,29 +9,30 @@ import uuid
 settings = get_settings()
 
 # create OpenAI async client once - reused for all embedding calls
-client = AsyncOpenAI(api_key=settings.openai_api_key)
-
 EMBEDDING_MODEL = "text-embedding-3-small"
 
+def _get_openai_client() -> AsyncOpenAI:
+    """
+    Creates a fresh OpenAI client each time.
+    Not module-level because Celery prefork inherits parent's
+    async objects — creating them fresh avoids event loop conflicts.
+    """
+    return AsyncOpenAI(api_key=settings.openai_api_key)
+
 async def embed_text(text: str) -> list[float]:
-    # converts a single string into 1536-dim vector
+    client = _get_openai_client()
     response = await client.embeddings.create(
         model=EMBEDDING_MODEL,
         input=text,
     )
-    # response.data is a list of embedding objects
-    # [0] gets the first and only one
-    # .embedding is the actual list of floats
     return response.data[0].embedding
 
 async def embed_text_batch(texts: list[str]) -> list[list[float]]:
-    # converts multiple strings into vectors in a single API call
-    # batching is faster and cheaper instead of calling API 25 times
+    client = _get_openai_client()
     response = await client.embeddings.create(
         model=EMBEDDING_MODEL,
         input=texts,
     )
-    # sort by index to guarantee order matches input order
     sorted_data = sorted(response.data, key=lambda x: x.index)
     return [item.embedding for item in sorted_data]
 
