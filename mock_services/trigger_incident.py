@@ -1,49 +1,43 @@
 import httpx
-import json
 from datetime import datetime, UTC
-from mock_services.incident_simulator import generate_connection_pool_incident
-from mock_services.metrics_generator import generate_metrics
+from mock_services.simulator import generate_incident_data
 
-async def trigger_incident(api_url: str = "http://localhost:8000") -> dict:
+
+async def trigger_incident(
+    api_url: str = "http://localhost:8000",
+    scenario_name: str = None,
+    service_name: str = None,
+) -> dict:
     """
-    Simulates a real monitoring system firing an alert.
-    
-    1. Generates the correlated log timeline and metrics
-    2. Calls POST /incidents with a realistic alert payload
-    3. Returns the created incident + all data for agent analysis
+    Triggers a random (or specified) incident scenario.
+    Generates correlated logs and metrics, fires alert to API.
     """
     now = datetime.now(UTC)
 
-    # generate correlated data
-    logs = generate_connection_pool_incident(start_time=now)
-    metrics = generate_metrics(start_time=now)
+    # Generate all incident data
+    incident_data = generate_incident_data(
+        scenario_name=scenario_name,
+        service_name=service_name,
+        start_time=now,
+    )
 
-    # alert payload - what a real monitoring system would send
-    # this is what triggered the alert: payment-service error rate > 5%
-    alert_payload = {
-        "affected_service": "payment-service",
-        "severity": "P1",
-        "raw_alert": {
-            "alert_name": "HighErrorRate",
-            "triggered_at": now.isoformat(),
-            "metric": "error_rate_pct",
-            "threshold": 5.0,
-            "current_value": 8.2,
-            "message": "payment-service error rate exceeded 5% threshold",
-        },
-    }
+    print(f"[Trigger] Scenario: {incident_data['scenario']}")
+    print(f"[Trigger] Service:  {incident_data['service']}")
+    print(f"[Trigger] {incident_data['description']}")
 
-    # call our own api to create the incident
+    # Fire the alert to our API
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{api_url}/incidents/",
-            json=alert_payload,
+            json=incident_data["alert_payload"],
         )
         response.raise_for_status()
         incident = response.json()
 
-    return{
+    return {
         "incident": incident,
-        "logs": logs,
-        "metrics": metrics,
+        "logs": incident_data["logs"],
+        "metrics": incident_data["metrics"],
+        "scenario": incident_data["scenario"],
+        "service": incident_data["service"],
     }

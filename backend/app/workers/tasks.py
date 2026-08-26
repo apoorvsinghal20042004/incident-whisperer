@@ -45,13 +45,15 @@ async def _process_incident_async(
     print(f"[Worker] Starting pipeline for incident {incident_id}")
 
     # step 1- generate mock logs and metrics
-    from mock_services.incident_simulator import generate_connection_pool_incident
-    from mock_services.metrics_generator import generate_metrics
+    from mock_services.simulator import generate_incident_data
     from datetime import datetime, UTC
 
     now = datetime.now(UTC)
-    logs = generate_connection_pool_incident(start_time=now)
-    metrics = generate_metrics(start_time=now)
+    incident_data = generate_incident_data(start_time=now)
+    logs = incident_data["logs"]
+    metrics = incident_data["metrics"]
+    scenario = incident_data["scenario"]
+    print(f"[Worker] Scenario: {scenario} on {incident_data['service']}")
     print(f"[Worker] Generated {len(logs)} logs and {len(metrics['metrics'])} metric series")
 
     # step 2- embed and store logs in pgvector
